@@ -1,0 +1,224 @@
+# Preface: The brief introduction of how I code the Sliding Puzzle - 2024 Spring semester
+# I will write the detailed comments below the particular codes
+# All in all, I designed this puzzle including 10 functions
+# specially contains check the inverse numbers and the move of space and the puzzle
+# These functions are used to initialize conduct and judge the situations
+# in some long functions, comments will explain and dividend parts of the function
+
+def initialize_and_greet():  # initialize the program by inputting the number and judging the type of it
+    print("Welcome to my puzzle game!\n"
+          "Please enter start if you want to play a 3*3 puzzle\n"
+          "If you want to stop playing, please enter stop\n")
+    # Some instructions
+    while True:
+        try:
+            game_begin = input().lower()
+            if game_begin == "start":
+                return "start"
+            elif game_begin == "stop":
+                return "stop"
+            else:
+                raise ValueError("Please enter start or stop to initialize the puzzle.")
+        except ValueError as e:
+            print(e)
+
+
+def puzzle_control():  # ask player to input the letter to control the puzzle
+    while True:
+        try:
+            keyboard_control = input(
+                "Enter the four letters used for left, right, up and down move like a d w s \n"
+                "And pay attention to the space between each of the alphabet letters \n"
+                "Sample like 'adws' is not allowed.\n"
+                "---> ").split()
+
+            if len(keyboard_control) != 4:
+                raise ValueError("Please enter Four alphabet letters to control\n")
+            # 1/ if and only if 4 letters to control the direction ---- Counter-example: a d w s q or A D W
+
+            elif len(set(keyboard_control)) != 4:
+                raise ValueError("Please enter four Different alphabet letters to control\n")
+            # 2/ the letters are all different from each others ---- Counter-example: a d a d
+
+            elif any(len(letter) != 1 or not letter.isalpha() for letter in keyboard_control):
+                raise ValueError("Please enter Only One alphabet letters to control a direction\n")
+            # 3/ only one letters to control the direction ---- Counter-example: aa dd ww ss
+
+            return keyboard_control
+            # To make sure the letters used to control the direction must satisfy 3 conditions:
+
+        except ValueError as e:
+            print(e)
+            continue
+
+
+def check_inverse_number(puzzle_number):
+    # in some special cases, the 3*3 puzzle will not have exact solution.
+    # so we introduce inverse number to judge whether a 3*3 puzzle have exact solution.
+    # this function use an algorithm that can calculate the inversion number of the list.
+    # 3*3 puzzle must have an even total inversion number so that it exists solutions.
+    inversion_count = 0
+    space_position = 0
+
+    for i in range(len(puzzle_number)):
+        if puzzle_number[i] == 0:
+            space_position = i
+        for j in range(i + 1, len(puzzle_number)):
+            # the definition about the inverse numbers
+            # count inversions by comparing elements to the right
+            if puzzle_number[i] > puzzle_number[j] != 0 and puzzle_number[i] != 0:
+                inversion_count += 1
+    # use this function in order to avoid the possibility of the mistake made by the 0
+    # a counter-example: 1,2,3,4,5,6,8,0,7 if calculate the inverse number gets 1 +1 =2
+    # because 0 < 8 and 7 < 8, the "inverse number" = 2
+    # however, when calculate the inverse number, "0" is not included since it represents as space
+    # so, the real inverse number is 1, not an even number which will causes a non-existed puzzle
+    # like: 1  2  3
+    #       4  5  6
+    #       8  7
+    if len(puzzle_number) == 9:
+        # adjust inversion count based on the row number of the space position
+        inversion_count += space_position // 3
+
+        return inversion_count % 2 == 0
+        # check if the total inversion count is even
+
+    return False
+
+
+import random
+
+
+def create_puzzle(board_size):  # create a random 3*3 puzzle game
+    while True:
+        numbers = list(range(0, board_size * board_size))
+
+        random.shuffle(numbers)
+        # to create the random puzzle by using shuffle and random then line in order
+
+        if check_inverse_number(numbers):
+            break
+
+    return numbers
+
+
+def create_solvable_puzzle(board_size):
+    while True:
+        puzzle = create_puzzle(board_size)
+        if check_inverse_number(puzzle):
+            break
+    return puzzle
+
+
+# to check the puzzle exists the solution again
+
+
+def check(check_complete):  # check whether the board is completed
+    check_completed = True
+    for i in range(len(check_complete) - 1):
+        if i + 1 != check_complete[i]:
+            check_completed = False
+    return check_completed
+
+
+def get_the_move(puzzle_board, movement):
+    blank_space = puzzle_board.index(0)
+    # find the blank space of the puzzle
+    while True:
+        move_probability = [[1, 0, 1, 0], [1, 1, 1, 0], [0, 1, 1, 0],
+                            [1, 0, 1, 1], [1, 1, 1, 1], [0, 1, 1, 1],
+                            [1, 0, 0, 1], [1, 1, 0, 1], [0, 1, 0, 1]]
+        # these are all the probability of the puzzle for all the 9 position
+        # the four vacancy represents left, right, up, down
+        # "1" means is able to move; "0" means is unable to move
+        # take [1, 0, 1, 0] for example: it means that when in the upper left in the corner
+        # the movement can be Left and Up
+
+        next_direction = ["Left --> " + movement[0] + ", ", "Right -->" + movement[1] + ", ",
+                          "Up -->" + movement[2] + ", ", "Down -->" + movement[3] + ", "]
+        hint = "Please enter your next move ("
+        hint += ",".join([next_direction[i] for i in range(4)
+                          if move_probability[blank_space][i] == 1]) + "):"
+        # this is to show the hint for the next move
+        # by checking whether the direction is feasible
+
+        for i in range(len(puzzle_board)):
+            if puzzle_board[i] == 0:
+                print("   ", end="")
+            else:
+                print("%-3s" % str(puzzle_board[i]), end="")
+            if (i == 2) or (i == 5) or (i == 8):
+                print("")
+        # print the 3*3 puzzle game
+
+        try:
+            ans = input(hint)
+            position = next(i for i in range(4)
+                            if ans == movement[i])
+            if move_probability[blank_space][position] == 1:
+                return position
+            else:
+                print("Sorry, please enter the correct letter in the hint")
+        except StopIteration:
+            print("Sorry, please enter the correct letter in the hint")
+            # this is to check whether the control of move is valid
+            # since the move only have "1" and "0", the other input will be invalid
+            # keep the loop until the input is valid
+
+
+def move_the_board(puzzle, movement):
+    space = puzzle.index(0)
+    while True:
+        move_pointer = [[1, 0, 3, 0], [2, 0, 4, 0], [0, 1, 5, 0],
+                        [4, 0, 6, 0], [5, 3, 7, 1], [0, 4, 8, 2],
+                        [7, 0, 0, 3], [8, 6, 0, 4], [0, 7, 0, 5]]
+        target_position = move_pointer[space][movement]
+        puzzle[space], puzzle[target_position] = puzzle[target_position], 0
+        return puzzle
+    # show the puzzle after one move by letting the space and the accurate number exchange the position
+    # take the [0, 7, 0, 5] for example: it means when space is on the lower right in the corner
+    # it can exchange the up and left position
+    # like: 1  2  3          1, 2  3
+    #       4  5  6   --->   4  5
+    #       7  8             7  8  6
+
+
+def congratulate(ans):  # a congratulation for the player's winning
+    print("1  2  3 \n"
+          "4  5  6\n"
+          "7  8\n"
+          "Congratulations! You solve the puzzle in ", ans, " moves!")
+    # show the numbers of the moves the player operate to finish the puzzle game
+
+
+def puzzle_begin():  # start the puzzle game
+    keyboard = puzzle_control()  # save the control letter
+    puzzle = create_solvable_puzzle(3)
+    counter = 0
+    while not check(puzzle):
+        counter = counter + 1
+        move = get_the_move(puzzle, keyboard)  # the player's movement
+        puzzle = move_the_board(puzzle, move)
+    congratulate(counter)
+    # accumulate the moves the player has used
+
+
+def main():
+    while True:  # make the game repeatable if the player want to play puzzle game again
+        puzzle_game = initialize_and_greet()
+        if puzzle_game == "start":
+            puzzle_begin()
+
+        elif puzzle_game == "stop":
+            print("Thanks for playing!")
+            break
+
+        play_again = input("Do you want to play the puzzle game again?\n "
+                           "Please enter yes or no to continue or stop the puzzle game: ").split
+        if play_again != "yes" or play_again != "YES":
+            print("Thanks for playing!")
+            break
+
+
+if __name__ == "__main__":
+    main()
