@@ -1,2 +1,3 @@
-# CUHKSZ-CSC-1002-Project
-The Assignment Coded by Mattya
+# CUHKSZ-CSC1002
+
+Basic Knowlegde and Application via Python Library Turtle.
